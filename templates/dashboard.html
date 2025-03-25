@@ -1,0 +1,223 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+    <h1>Welcome, {{ current_user.username }}!</h1>
+    
+    <div class="dashboard-grid">
+        <div class="dashboard-card mood-summary">
+            <h2>Your Mood</h2>
+            {% if daily_avg_mood is not none %}
+                <div class="current-mood">
+                    <div class="mood-emoji">
+                        {{ mood_category.emoji }}
+                    </div>
+                    <div class="mood-info">
+                        <p>Today's average mood: <strong>
+                            {{ mood_category.category }} ({{ "%.1f"|format(daily_avg_mood) }}/5)
+                        </strong></p>
+                        {% if moods and moods[0].mood_description %}
+                            <p class="mood-description">{{ moods[0].mood_description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mood-chart-preview">
+                    <canvas id="moodChartPreview"></canvas>
+                </div>
+                <a href="{{ url_for('mood_tracker') }}" class="btn secondary">View Full Mood History</a>
+                
+                {% if recommended_resources %}
+                    <div class="recommended-resources">
+                        <h3>Recommended Resources</h3>
+                        <ul class="resource-list">
+                            {% for resource in recommended_resources %}
+                                <li>
+                                    <a href="{{ resource.url }}" class="resource-link">
+                                        {{ resource.title }}
+                                    </a>
+                                    <p class="resource-description">{{ resource.description[:100] }}{% if resource.description|length > 100 %}...{% endif %}</p>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                {% if can_access_chat %}
+                    <div class="community-chat-access">
+                        <h3>Community Support Available</h3>
+                        <p>Based on your recent mood scores, you have access to our community support chat where you can connect with others who may be experiencing similar feelings.</p>
+                        <a href="{{ url_for('community_chat') }}" class="btn primary">Join Community Chat</a>
+                    </div>
+                {% endif %}
+            {% elif moods %}
+                <div class="current-mood">
+                    <div class="mood-emoji">
+                        {% if moods[0].mood_value == 1 %}😢
+                        {% elif moods[0].mood_value == 2 %}😕
+                        {% elif moods[0].mood_value == 3 %}😐
+                        {% elif moods[0].mood_value == 4 %}🙂
+                        {% elif moods[0].mood_value == 5 %}😄
+                        {% endif %}
+                    </div>
+                    <div class="mood-info">
+                        <p>Today's mood: <strong>
+                            {% if moods[0].mood_value == 1 %}Very Low
+                            {% elif moods[0].mood_value == 2 %}Low
+                            {% elif moods[0].mood_value == 3 %}Neutral
+                            {% elif moods[0].mood_value == 4 %}Good
+                            {% elif moods[0].mood_value == 5 %}Excellent
+                            {% endif %}
+                        </strong></p>
+                        {% if moods[0].mood_description %}
+                            <p class="mood-description">{{ moods[0].mood_description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mood-chart-preview">
+                    <canvas id="moodChartPreview"></canvas>
+                </div>
+                <a href="{{ url_for('mood_tracker') }}" class="btn secondary">View Full Mood History</a>
+            {% else %}
+                <p>You haven't logged any moods yet.</p>
+                <a href="{{ url_for('mood_tracker') }}" class="btn primary">Log Your First Mood</a>
+            {% endif %}
+        </div>
+        
+        <div class="dashboard-card quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="action-buttons">
+                <a href="{{ url_for('chatbot') }}" class="action-button">
+                    <div class="action-icon">💬</div>
+                    <span>Talk to AI</span>
+                </a>
+                <a href="{{ url_for('journal') }}" class="action-button">
+                    <div class="action-icon">📝</div>
+                    <span>Write Journal</span>
+                </a>
+                <a href="{{ url_for('mood_tracker') }}" class="action-button">
+                    <div class="action-icon">📊</div>
+                    <span>Log Mood</span>
+                </a>
+                <a href="{{ url_for('resources') }}" class="action-button">
+                    <div class="action-icon">📚</div>
+                    <span>Resources</span>
+                </a>
+                {% if current_user.id==1 %}
+                <a href="{{ url_for('admin_resources') }}" class="action-button">
+                    <div class="action-icon">📚</div>
+                    <span>Edit Resources</span>
+                </a>
+                {% endif %}
+                {% if can_access_chat %}
+                <a href="{{ url_for('community_chat') }}" class="action-button highlight-action">
+                    <div class="action-icon">👥</div>
+                    <span>Community Chat</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="dashboard-card journal-preview">
+            <h2>Recent Journal Entries</h2>
+            {% if entries %}
+                <div class="journal-entries-list">
+                    {% for entry in entries %}
+                        <div class="journal-entry-preview">
+                            <div class="entry-date">{{ entry.date.strftime('%b %d, %Y') }}</div>
+                            <div class="entry-excerpt">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <a href="{{ url_for('journal') }}" class="btn secondary">View All Entries</a>
+            {% else %}
+                <p>You haven't written any journal entries yet.</p>
+                <a href="{{ url_for('journal') }}" class="btn primary">Write Your First Entry</a>
+            {% endif %}
+        </div>
+        
+        <div class="dashboard-card daily-tip">
+            <h2>Daily Wellness Tip</h2>
+            <div class="tip-content">
+                <p id="daily-tip">Loading today's tip...</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mood chart preview
+        {% if moods and moods|length > 1 %}
+            const ctx = document.getElementById('moodChartPreview').getContext('2d');
+            const moodData = [
+                {% for mood in moods[:7]|reverse %}
+                    {{ mood.mood_value }},
+                {% endfor %}
+            ];
+            const moodLabels = [
+                {% for mood in moods[:7]|reverse %}
+                    '{{ mood.date.strftime("%a") }}',
+                {% endfor %}
+            ];
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: moodLabels,
+                    datasets: [{
+                        label: 'Mood',
+                        data: moodData,
+                        borderColor: '#64B5F6',
+                        backgroundColor: 'rgba(100, 181, 246, 0.2)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 1,
+                            max: 5,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        {% endif %}
+        
+        // Daily wellness tips
+        const wellnessTips = [
+            "Take a few minutes to practice deep breathing today.",
+            "Try to get outside for at least 15 minutes of natural light.",
+            "Drink water regularly throughout the day to stay hydrated.",
+            "Practice gratitude by noting three things you're thankful for.",
+            "Take short breaks during work to stretch and reset your mind.",
+            "Try to limit screen time before bed for better sleep.",
+            "Connect with a friend or family member today.",
+            "Move your body in a way that feels good for at least 20 minutes.",
+            "Practice mindfulness by fully focusing on one task at a time.",
+            "Be kind to yourself today - self-compassion is essential for well-being."
+        ];
+        
+        // Display a random tip
+        const tipElement = document.getElementById('daily-tip');
+        const randomTip = wellnessTips[Math.floor(Math.random() * wellnessTips.length)];
+        tipElement.textContent = randomTip;
+    });
+</script>
+{% endblock %}
+

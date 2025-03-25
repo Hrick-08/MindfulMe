@@ -1,0 +1,428 @@
+{% extends "layout.html" %}
+
+{% block title %}Insights{% endblock %}
+
+{% block head %}
+<style>
+    .insights-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+    
+    .insight-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 25px;
+    }
+    
+    .insight-card h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .mood-trends {
+        grid-column: 1 / -1;
+    }
+    
+    .mood-chart-container {
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .trend-summary {
+        display: flex;
+        align-items: center;
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+    }
+    
+    .trend-icon {
+        font-size: 2rem;
+        margin-right: 15px;
+    }
+    
+    .trend-details h3 {
+        margin: 0 0 5px 0;
+    }
+    
+    .trend-details p {
+        margin: 0;
+        color: #666;
+    }
+    
+    .common-patterns {
+        grid-column: 1 / 2;
+    }
+    
+    .pattern-item {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    
+    .pattern-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .pattern-title {
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    
+    .pattern-description {
+        color: #666;
+        font-size: 0.95rem;
+    }
+    
+    .recommendations {
+        grid-column: 2 / 3;
+    }
+    
+    .recommendation-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    
+    .recommendation-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .recommendation-icon {
+        font-size: 1.5rem;
+        margin-right: 15px;
+        color: #6A8CAF;
+    }
+    
+    .recommendation-content {
+        flex: 1;
+    }
+    
+    .recommendation-title {
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    
+    .recommendation-description {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 10px;
+    }
+    
+    .recommendation-action {
+        display: inline-block;
+        color: #6A8CAF;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .recommendation-action:hover {
+        text-decoration: underline;
+    }
+    
+    .journal-analysis {
+        grid-column: 1 / -1;
+    }
+    
+    .word-cloud {
+        height: 250px;
+        margin: 20px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+    }
+    
+    .common-themes {
+        margin-top: 20px;
+    }
+    
+    .theme-item {
+        display: inline-block;
+        margin: 5px;
+        padding: 8px 15px;
+        background-color: #f1f1f1;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+    
+    .theme-item.positive {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+    
+    .theme-item.negative {
+        background-color: #ffebee;
+        color: #d32f2f;
+    }
+    
+    .theme-item.neutral {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    @media (max-width: 768px) {
+        .insights-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .common-patterns, .recommendations {
+            grid-column: 1 / -1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="insights-page">
+    <h1>Personalized Insights</h1>
+    <p class="page-description">Gain deeper understanding of your emotional patterns and receive personalized recommendations for mental well-being.</p>
+    
+    <div class="insights-container">
+        <div class="insight-card mood-trends">
+            <h2>Your Mood Trends</h2>
+            <div class="mood-chart-container">
+                <canvas id="moodTrendsChart"></canvas>
+            </div>
+            
+            <div class="trend-summary">
+                <div class="trend-icon">
+                    {% if mood_trend == 'improving' %}
+                        📈
+                    {% elif mood_trend == 'declining' %}
+                        📉
+                    {% else %}
+                        📊
+                    {% endif %}
+                </div>
+                <div class="trend-details">
+                    <h3>
+                        {% if mood_trend == 'improving' %}
+                            Your mood is improving
+                        {% elif mood_trend == 'declining' %}
+                            Your mood has been declining
+                        {% else %}
+                            Your mood has been stable
+                        {% endif %}
+                    </h3>
+                    <p>
+                        {% if mood_trend == 'improving' %}
+                            Your mood has been trending upward over the past week. Keep up the good work!
+                        {% elif mood_trend == 'declining' %}
+                            Your mood has been trending downward recently. Consider trying some of the recommended activities below.
+                        {% else %}
+                            Your mood has remained relatively consistent over the past week.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="insight-card common-patterns">
+            <h2>Common Patterns</h2>
+            
+            {% if moods|length > 5 %}
+                <div class="pattern-item">
+                    <div class="pattern-title">Morning vs. Evening Mood</div>
+                    <div class="pattern-description">Your mood tends to be higher in the morning compared to evening hours.</div>
+                </div>
+                <div class="pattern-item">
+                    <div class="pattern-title">Weekend Effect</div>
+                    <div class="pattern-description">Your mood typically improves on weekends, particularly on Saturdays.</div>
+                </div>
+                <div class="pattern-item">
+                    <div class="pattern-title">Social Interaction Impact</div>
+                    <div class="pattern-description">Your journal entries suggest that social interactions positively affect your mood.</div>
+                </div>
+            {% else %}
+                <p>Continue tracking your mood to reveal patterns over time. We need at least 5 mood entries to identify patterns.</p>
+            {% endif %}
+        </div>
+        
+        <div class="insight-card recommendations">
+            <h2>Personalized Recommendations</h2>
+            
+            <div class="recommendation-item">
+                <div class="recommendation-icon">🌿</div>
+                <div class="recommendation-content">
+                    <div class="recommendation-title">Mindfulness Practice</div>
+                    <div class="recommendation-description">Based on your mood patterns, a short daily mindfulness practice could help stabilize your emotions.</div>
+                    <a href="#" class="recommendation-action">Try a 5-minute guided meditation</a>
+                </div>
+            </div>
+            
+            <div class="recommendation-item">
+                <div class="recommendation-icon">🚶</div>
+                <div class="recommendation-content">
+                    <div class="recommendation-title">Regular Physical Activity</div>
+                    <div class="recommendation-description">Even brief physical activity can boost your mood. Try a short walk during your lower-mood periods.</div>
+                    <a href="#" class="recommendation-action">View exercise suggestions</a>
+                </div>
+            </div>
+            
+            <div class="recommendation-item">
+                <div class="recommendation-icon">📝</div>
+                <div class="recommendation-content">
+                    <div class="recommendation-title">Gratitude Journaling</div>
+                    <div class="recommendation-description">Writing down things you're grateful for can shift your focus to positive aspects of life.</div>
+                    <a href="{{ url_for('journal') }}" class="recommendation-action">Start a gratitude journal</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="insight-card journal-analysis">
+            <h2>Journal Analysis</h2>
+            
+            {% if entries|length > 3 %}
+                <p>Based on your journal entries, here are some common themes and emotions expressed:</p>
+                
+                <div class="word-cloud">
+                    <!-- In a real app, you'd generate a word cloud visualization here -->
+                    <img src="{{ url_for('static', filename='images/word-cloud-placeholder.svg') }}" alt="Word cloud of common themes">
+                </div>
+                
+                <div class="common-themes">
+                    <h3>Common Themes</h3>
+                    <div class="theme-item positive">gratitude</div>
+                    <div class="theme-item neutral">work</div>
+                    <div class="theme-item positive">friends</div>
+                    <div class="theme-item negative">stress</div>
+                    <div class="theme-item neutral">family</div>
+                    <div class="theme-item positive">accomplishment</div>
+                    <div class="theme-item negative">worry</div>
+                </div>
+            {% else %}
+                <p>Write more journal entries to unlock insights about your thought patterns and emotional themes. We need at least 3 entries to provide meaningful analysis.</p>
+                <a href="{{ url_for('journal') }}" class="btn secondary">Write in Journal</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mood trends chart
+        {% if moods and moods|length > 1 %}
+            const ctx = document.getElementById('moodTrendsChart').getContext('2d');
+            
+            // Prepare data for the chart
+            const moodData = [
+                {% for mood in moods[:30]|reverse %}
+                    {{ mood.mood_value }},
+                {% endfor %}
+            ];
+            
+            const moodLabels = [
+                {% for mood in moods[:30]|reverse %}
+                    '{{ mood.date.strftime("%b %d") }}',
+                {% endfor %}
+            ];
+            
+            // Calculate 7-day moving average
+            const movingAvgData = [];
+            for (let i = 0; i < moodData.length; i++) {
+                if (i < 6) {
+                    // Not enough data for 7-day average yet
+                    movingAvgData.push(null);
+                } else {
+                    const sum = moodData.slice(i-6, i+1).reduce((a, b) => a + b, 0);
+                    movingAvgData.push((sum / 7).toFixed(2));
+                }
+            }
+            
+            // Create chart
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: moodLabels,
+                    datasets: [
+                        {
+                            label: 'Daily Mood',
+                            data: moodData,
+                            borderColor: '#64B5F6',
+                            backgroundColor: 'rgba(100, 181, 246, 0.2)',
+                            pointBackgroundColor: '#64B5F6',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            fill: false
+                        },
+                        {
+                            label: '7-Day Average',
+                            data: movingAvgData,
+                            borderColor: '#FF7043',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 1,
+                            max: 5,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    switch (value) {
+                                        case 1: return 'Very Low';
+                                        case 2: return 'Low';
+                                        case 3: return 'Neutral';
+                                        case 4: return 'Good';
+                                        case 5: return 'Excellent';
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.label === 'Daily Mood') {
+                                        let label = '';
+                                        
+                                        switch (context.raw) {
+                                            case 1: label = 'Very Low'; break;
+                                            case 2: label = 'Low'; break;
+                                            case 3: label = 'Neutral'; break;
+                                            case 4: label = 'Good'; break;
+                                            case 5: label = 'Excellent'; break;
+                                        }
+                                        
+                                        return label;
+                                    } else {
+                                        return '7-Day Average: ' + context.raw;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        {% endif %}
+    });
+</script>
+{% endblock %}
+

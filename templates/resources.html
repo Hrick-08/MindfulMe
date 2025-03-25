@@ -1,0 +1,260 @@
+{% extends "layout.html" %}
+
+{% block title %}Resources{% endblock %}
+
+{% block head %}
+<style>
+    .resources-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+    }
+    
+    .resource-card {
+        background-color: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .resource-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .resource-image {
+        height: 180px;
+        background-color: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    .resource-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .resource-content {
+        padding: 20px;
+    }
+    
+    .resource-type {
+        display: inline-block;
+        padding: 4px 10px;
+        background-color: #e3f2fd;
+        color: #1976d2;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .resource-type.article {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .resource-type.video {
+        background-color: #fce4ec;
+        color: #c2185b;
+    }
+    
+    .resource-type.exercise {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+    
+    .resource-title {
+        margin: 0 0 10px 0;
+        font-size: 1.2rem;
+    }
+    
+    .resource-description {
+        color: #666;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+    
+    .resource-link {
+        display: inline-block;
+        color: #6A8CAF;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .resource-link:hover {
+        text-decoration: underline;
+    }
+    
+    .resources-filters {
+        margin-bottom: 30px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .filter-button {
+        padding: 8px 16px;
+        background-color: #f5f5f5;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-button:hover {
+        background-color: #e0e0e0;
+    }
+    
+    .filter-button.active {
+        background-color: #6A8CAF;
+        color: white;
+    }
+    
+    .resources-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .resources-search {
+        position: relative;
+        width: 300px;
+    }
+    
+    .resources-search input {
+        width: 100%;
+        padding: 10px 15px 10px 40px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+    
+    .resources-search i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999;
+    }
+    
+    .no-resources {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 40px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="resources-page">
+    <h1>Resources</h1>
+    <p class="page-description">Discover articles, videos, and exercises to support your mental well-being. Resources are personalized based on your mood and activity.</p>
+    
+    <div class="resources-header">
+        <div class="resources-filters">
+            <button class="filter-button active" data-filter="all">All Resources</button>
+            <button class="filter-button" data-filter="article">Articles</button>
+            <button class="filter-button" data-filter="video">Videos</button>
+            <button class="filter-button" data-filter="exercise">Exercises</button>
+        </div>
+        
+        <div class="resources-search">
+            <i class="search-icon">🔍</i>
+            <input type="text" id="resource-search" placeholder="Search resources...">
+        </div>
+    </div>
+    
+    <div class="resources-container" id="resources-container">
+        {% if resources %}
+            {% for resource in resources %}
+                <div class="resource-card" data-type="{{ resource.resource_type }}">
+                    <div class="resource-image">
+                        <img src="{{ url_for('static', filename='images/resources/' + resource.resource_type + '.jpg') }}" alt="{{ resource.title }}">
+                    </div>
+                    <div class="resource-content">
+                        <span class="resource-type {{ resource.resource_type }}">
+                            {{ resource.resource_type|capitalize }}
+                        </span>
+                        <h3 class="resource-title">{{ resource.title }}</h3>
+                        <p class="resource-description">{{ resource.description }}</p>
+                        <a href="{{ resource.url }}" class="resource-link" target="_blank">Read More</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-resources">
+                <h3>No resources available</h3>
+                <p>Check back later for personalized resources based on your mood and activity.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterButtons = document.querySelectorAll('.filter-button');
+        const resourceCards = document.querySelectorAll('.resource-card');
+        const searchInput = document.getElementById('resource-search');
+        
+        // Filter resources by type
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Get filter value
+                const filter = this.dataset.filter;
+                
+                // Show/hide resources based on filter
+                resourceCards.forEach(card => {
+                    if (filter === 'all' || card.dataset.type === filter) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                
+                // Apply search filter as well
+                applySearchFilter();
+            });
+        });
+        
+        // Search resources
+        searchInput.addEventListener('input', applySearchFilter);
+        
+        function applySearchFilter() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const activeFilter = document.querySelector('.filter-button.active').dataset.filter;
+            
+            resourceCards.forEach(card => {
+                const title = card.querySelector('.resource-title').textContent.toLowerCase();
+                const description = card.querySelector('.resource-description').textContent.toLowerCase();
+                const type = card.dataset.type;
+                
+                // Check if card matches both search term and active filter
+                const matchesSearch = title.includes(searchTerm) || description.includes(searchTerm);
+                const matchesFilter = activeFilter === 'all' || type === activeFilter;
+                
+                if (matchesSearch && matchesFilter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

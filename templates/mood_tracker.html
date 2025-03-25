@@ -1,0 +1,652 @@
+{% extends "layout.html" %}
+
+{% block title %}Mood Tracker{% endblock %}
+
+{% block head %}
+<style>
+    .mood-tracker-container {
+        background-color: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .mood-input-section {
+        margin-bottom: 30px;
+        padding-bottom: 30px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .time-slots {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    
+    .time-slot {
+        flex: 1;
+        text-align: center;
+        padding: 15px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+        margin: 0 10px;
+    }
+    
+    .time-slot:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .time-slot.active {
+        border-color: #4a6fa5;
+        background-color: #e8f0fb;
+    }
+    
+    .time-slot.completed {
+        background-color: #e8f5e9;
+        border-color: #4caf50;
+        position: relative;
+    }
+    
+    .time-slot.completed:after {
+        content: '✓';
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        color: #4caf50;
+        font-weight: bold;
+    }
+    
+    .time-slot-icon {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+    
+    .time-slot-label {
+        font-weight: 500;
+    }
+    
+    .mood-selector {
+        display: flex;
+        justify-content: space-between;
+        margin: 20px 0;
+    }
+    
+    .mood-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    
+    .mood-option:hover {
+        background-color: #f5f5f5;
+        transform: translateY(-3px);
+    }
+    
+    .mood-option.selected {
+        background-color: #e8f0fb;
+        border: 2px solid #4a6fa5;
+        transform: translateY(-3px);
+    }
+    
+    .mood-emoji {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+    }
+    
+    .mood-label {
+        font-size: 0.9rem;
+        color: #555;
+    }
+    
+    .mood-description {
+        width: 100%;
+        margin-top: 15px;
+    }
+    
+    .mood-description textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+    }
+    
+    .submit-mood {
+        margin-top: 15px;
+        text-align: right;
+    }
+    
+    .mood-history-section {
+        margin-top: 20px;
+    }
+    
+    .mood-chart-container {
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .mood-history-list {
+        margin-top: 30px;
+    }
+    
+    .mood-history-list h3 {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+        color: #4a6fa5;
+    }
+    
+    .mood-entry {
+        display: flex;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f5f5f5;
+        transition: background-color 0.2s;
+    }
+    
+    .mood-entry:hover {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding-left: 10px;
+    }
+    
+    .mood-entry-emoji {
+        font-size: 1.8rem;
+        margin-right: 15px;
+        min-width: 40px;
+        text-align: center;
+    }
+    
+    .mood-entry-details {
+        flex: 1;
+    }
+    
+    .mood-entry-date {
+        font-size: 0.9rem;
+        color: #777;
+        margin-bottom: 5px;
+    }
+    
+    .mood-entry-value {
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    
+    .mood-entry-description {
+        font-size: 0.9rem;
+        color: #555;
+    }
+    
+    .mood-filters {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 15px;
+    }
+    
+    .mood-filter {
+        margin-left: 10px;
+        padding: 5px 10px;
+        border: 1px solid #ddd;
+        border-radius: 15px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .mood-filter:hover {
+        border-color: #4a6fa5;
+    }
+    
+    .mood-filter.active {
+        background-color: #4a6fa5;
+        color: white;
+        border-color: #4a6fa5;
+    }
+    
+    .daily-average {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        transition: transform 0.2s;
+    }
+    
+    .daily-average:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .daily-average-emoji {
+        font-size: 1.5rem;
+        margin-right: 10px;
+    }
+    
+    .daily-average-value {
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="mood-tracker-page">
+    <h1>Mood Tracker</h1>
+    <p class="page-description">Track your mood three times a day to gain deeper insights into your emotional patterns and well-being over time.</p>
+    
+    <div class="mood-tracker-container">
+        <div class="mood-input-section">
+            <h2>How are you feeling right now?</h2>
+            
+            <div class="time-slots">
+                <div class="time-slot" id="morning-slot" data-slot="morning">
+                    <div class="time-slot-icon">🌅</div>
+                    <div class="time-slot-label">Morning</div>
+                    <div class="time-slot-time">6 AM - 12 PM</div>
+                </div>
+                <div class="time-slot" id="afternoon-slot" data-slot="afternoon">
+                    <div class="time-slot-icon">☀️</div>
+                    <div class="time-slot-label">Afternoon</div>
+                    <div class="time-slot-time">12 PM - 6 PM</div>
+                </div>
+                <div class="time-slot" id="evening-slot" data-slot="evening">
+                    <div class="time-slot-icon">🌙</div>
+                    <div class="time-slot-label">Evening</div>
+                    <div class="time-slot-time">6 PM - 12 AM</div>
+                </div>
+            </div>
+            
+            <div class="mood-selector" id="mood-selector">
+                <div class="mood-option" data-value="1">
+                    <div class="mood-emoji">😢</div>
+                    <div class="mood-label">Very Low</div>
+                </div>
+                <div class="mood-option" data-value="2">
+                    <div class="mood-emoji">😕</div>
+                    <div class="mood-label">Low</div>
+                </div>
+                <div class="mood-option" data-value="3">
+                    <div class="mood-emoji">😐</div>
+                    <div class="mood-label">Neutral</div>
+                </div>
+                <div class="mood-option" data-value="4">
+                    <div class="mood-emoji">🙂</div>
+                    <div class="mood-label">Good</div>
+                </div>
+                <div class="mood-option" data-value="5">
+                    <div class="mood-emoji">😄</div>
+                    <div class="mood-label">Excellent</div>
+                </div>
+            </div>
+            
+            <div class="mood-description">
+                <label for="mood-notes">What's contributing to your mood right now? (optional)</label>
+                <textarea id="mood-notes" placeholder="E.g., Had a good conversation with a friend, feeling stressed about work, etc."></textarea>
+            </div>
+            
+            <div class="submit-mood">
+                <button id="save-mood" class="btn primary" disabled>Save Mood</button>
+            </div>
+        </div>
+        
+        <div class="mood-history-section">
+            <h2>Your Mood History</h2>
+            
+            <div class="mood-filters">
+                <div class="mood-filter active" data-period="week">Week</div>
+                <div class="mood-filter" data-period="month">Month</div>
+                <div class="mood-filter" data-period="year">Year</div>
+            </div>
+            
+            <div class="mood-chart-container">
+                <canvas id="moodChart"></canvas>
+            </div>
+            
+            <div class="mood-history-list">
+                <h3>Daily Averages</h3>
+                {% if daily_averages %}
+                    {% for date_key, avg_data in daily_averages.items() %}
+                        <div class="daily-average">
+                            <div class="daily-average-emoji">{{ avg_data.category.emoji }}</div>
+                            <div class="daily-average-details">
+                                <div class="daily-average-date">{{ date_key|replace('-', '/') }}</div>
+                                <div class="daily-average-value">{{ avg_data.category.category }} ({{ "%.1f"|format(avg_data.average) }}/5)</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No mood data available yet.</p>
+                {% endif %}
+                
+                <h3>Recent Entries</h3>
+                <div id="mood-entries">
+                    {% if moods %}
+                        {% for mood in moods %}
+                            <div class="mood-entry">
+                                <div class="mood-entry-emoji">
+                                    {% if mood.mood_value == 1 %}😢
+                                    {% elif mood.mood_value == 2 %}😕
+                                    {% elif mood.mood_value == 3 %}😐
+                                    {% elif mood.mood_value == 4 %}🙂
+                                    {% elif mood.mood_value == 5 %}😄
+                                    {% endif %}
+                                </div>
+                                <div class="mood-entry-details">
+                                    <div class="mood-entry-date">
+                                        {{ mood.date.strftime('%B %d, %Y at %I:%M %p') }}
+                                        {% if mood.time_slot %}
+                                            ({{ mood.time_slot|capitalize }})
+                                        {% endif %}
+                                    </div>
+                                    <div class="mood-entry-value">
+                                        {% if mood.mood_value == 1 %}Very Low
+                                        {% elif mood.mood_value == 2 %}Low
+                                        {% elif mood.mood_value == 3 %}Neutral
+                                        {% elif mood.mood_value == 4 %}Good
+                                        {% elif mood.mood_value == 5 %}Excellent
+                                        {% endif %}
+                                    </div>
+                                    {% if mood.mood_description %}
+                                        <div class="mood-entry-description">{{ mood.mood_description }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No mood entries yet. Start tracking your mood above!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Time slot selection
+        const timeSlots = document.querySelectorAll('.time-slot');
+        const morningSlot = document.getElementById('morning-slot');
+        const afternoonSlot = document.getElementById('afternoon-slot');
+        const eveningSlot = document.getElementById('evening-slot');
+        
+        // Mood selection
+        const moodSelector = document.getElementById('mood-selector');
+        const moodOptions = document.querySelectorAll('.mood-option');
+        const moodNotes = document.getElementById('mood-notes');
+        const saveMoodButton = document.getElementById('save-mood');
+        
+        let selectedTimeSlot = null;
+        let selectedMood = null;
+        
+        // Check current time and select appropriate time slot
+        function selectDefaultTimeSlot() {
+            const now = new Date();
+            const hour = now.getHours();
+            
+            if (hour >= 6 && hour < 12) {
+                selectTimeSlot(morningSlot);
+            } else if (hour >= 12 && hour < 18) {
+                selectTimeSlot(afternoonSlot);
+            } else {
+                selectTimeSlot(eveningSlot);
+            }
+        }
+        
+        // Check if user has already submitted mood for each time slot today
+        function checkCompletedTimeSlots() {
+            // This would normally be an API call to check the database
+            // For now, we'll simulate with localStorage
+            const today = new Date().toLocaleDateString();
+            
+            const morningCompleted = localStorage.getItem(`mood_${today}_morning`);
+            const afternoonCompleted = localStorage.getItem(`mood_${today}_afternoon`);
+            const eveningCompleted = localStorage.getItem(`mood_${today}_evening`);
+            
+            if (morningCompleted) {
+                morningSlot.classList.add('completed');
+            }
+            
+            if (afternoonCompleted) {
+                afternoonSlot.classList.add('completed');
+            }
+            
+            if (eveningCompleted) {
+                eveningSlot.classList.add('completed');
+            }
+        }
+        
+        // Select time slot
+        function selectTimeSlot(slot) {
+            // Remove active class from all slots
+            timeSlots.forEach(s => s.classList.remove('active'));
+            
+            // Add active class to selected slot
+            slot.classList.add('active');
+            
+            // Store selected slot
+            selectedTimeSlot = slot.dataset.slot;
+            
+            // Check if save button should be enabled
+            checkSaveButton();
+        }
+        
+        // Time slot click handlers
+        timeSlots.forEach(slot => {
+            slot.addEventListener('click', function() {
+                // Don't allow selection of completed slots
+                if (this.classList.contains('completed')) {
+                    alert('You have already recorded your mood for this time period today.');
+                    return;
+                }
+                
+                selectTimeSlot(this);
+            });
+        });
+        
+        // Mood option click handlers
+        moodOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove selected class from all options
+                moodOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                
+                // Store selected mood value
+                selectedMood = this.dataset.value;
+                
+                // Check if save button should be enabled
+                checkSaveButton();
+            });
+        });
+        
+        // Check if save button should be enabled
+        function checkSaveButton() {
+            saveMoodButton.disabled = !(selectedTimeSlot && selectedMood);
+        }
+        
+        // Save mood
+        saveMoodButton.addEventListener('click', async function() {
+            if (!selectedTimeSlot || !selectedMood) return;
+            
+            try {
+                const response = await fetch('/api/mood', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        value: selectedMood,
+                        description: moodNotes.value.trim(),
+                        time_slot: selectedTimeSlot
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Mark time slot as completed
+                    const today = new Date().toLocaleDateString();
+                    localStorage.setItem(`mood_${today}_${selectedTimeSlot}`, 'true');
+                    
+                    // Reset form
+                    moodOptions.forEach(opt => opt.classList.remove('selected'));
+                    moodNotes.value = '';
+                    saveMoodButton.disabled = true;
+                    selectedMood = null;
+                    
+                    // Mark the time slot as completed
+                    document.querySelector(`.time-slot[data-slot="${selectedTimeSlot}"]`).classList.add('completed');
+                    
+                    // Reload page to show new entry
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error saving mood:', error);
+                alert('There was an error saving your mood. Please try again.');
+            }
+        });
+        
+        // Initialize
+        selectDefaultTimeSlot();
+        checkCompletedTimeSlots();
+        
+        // Mood chart
+        {% if moods %}
+            const ctx = document.getElementById('moodChart').getContext('2d');
+            
+            // Prepare data for the chart
+            const moodData = [
+                {% for mood in moods[:30]|reverse %}
+                    {{ mood.mood_value }},
+                {% endfor %}
+            ];
+            
+            const moodLabels = [
+                {% for mood in moods[:30]|reverse %}
+                    '{{ mood.date.strftime("%b %d") }}{% if mood.time_slot %} ({{ mood.time_slot[:1]|upper }}){% endif %}',
+                {% endfor %}
+            ];
+            
+            // Create chart
+            const moodChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: moodLabels,
+                    datasets: [{
+                        label: 'Mood',
+                        data: moodData,
+                        borderColor: '#4a6fa5',
+                        backgroundColor: 'rgba(74, 111, 165, 0.2)',
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            return value <= 2 ? '#f44336' : 
+                                   value >= 4 ? '#4caf50' : 
+                                   '#ff9800';
+                        },
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 1,
+                            max: 5,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    switch (value) {
+                                        case 1: return 'Very Low';
+                                        case 2: return 'Low';
+                                        case 3: return 'Neutral';
+                                        case 4: return 'Good';
+                                        case 5: return 'Excellent';
+                                    }
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = '';
+                                    
+                                    switch (context.raw) {
+                                        case 1: label = 'Very Low'; break;
+                                        case 2: label = 'Low'; break;
+                                        case 3: label = 'Neutral'; break;
+                                        case 4: label = 'Good'; break;
+                                        case 5: label = 'Excellent'; break;
+                                    }
+                                    
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Mood filters
+            const moodFilters = document.querySelectorAll('.mood-filter');
+            
+            moodFilters.forEach(filter => {
+                filter.addEventListener('click', function() {
+                    // Remove active class from all filters
+                    moodFilters.forEach(f => f.classList.remove('active'));
+                    
+                    // Add active class to clicked filter
+                    this.classList.add('active');
+                    
+                    // Update chart based on selected period
+                    const period = this.dataset.period;
+                    
+                    // This is a simplified version - in a real app, you'd fetch data from the server
+                    // based on the selected period
+                    if (period === 'week') {
+                        moodChart.data.labels = moodLabels.slice(0, 7);
+                        moodChart.data.datasets[0].data = moodData.slice(0, 7);
+                    } else if (period === 'month') {
+                        moodChart.data.labels = moodLabels.slice(0, 30);
+                        moodChart.data.datasets[0].data = moodData.slice(0, 30);
+                    } else if (period === 'year') {
+                        // In a real app, you'd aggregate data by month for a year view
+                        moodChart.data.labels = moodLabels;
+                        moodChart.data.datasets[0].data = moodData;
+                    }
+                    
+                    moodChart.update();
+                });
+            });
+        {% endif %}
+    });
+</script>
+{% endblock %}
+

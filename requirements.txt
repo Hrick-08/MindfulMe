@@ -1,0 +1,10 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Werkzeug
+requests
+sqlalchemy
+Flask-SocketIO
+uuid
+dotenv
+smtplib

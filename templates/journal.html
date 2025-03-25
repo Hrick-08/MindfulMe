@@ -1,0 +1,346 @@
+{% extends "layout.html" %}
+
+{% block title %}Journal{% endblock %}
+
+{% block head %}
+<style>
+    .journal-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 25px;
+        min-height: 70vh;
+    }
+    
+    .journal-entries {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .journal-entries-header {
+        padding: 15px 20px;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .journal-entries-list {
+        height: calc(70vh - 60px);
+        overflow-y: auto;
+    }
+    
+    .journal-entry-item {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .journal-entry-item:hover {
+        background-color: #f9f9f9;
+    }
+    
+    .journal-entry-item.active {
+        background-color: #e3f2fd;
+    }
+    
+    .journal-entry-date {
+        font-size: 0.9rem;
+        color: #777;
+        margin-bottom: 5px;
+    }
+    
+    .journal-entry-preview {
+        font-size: 0.95rem;
+        color: #555;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .journal-editor {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .journal-editor-header {
+        padding: 15px 20px;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .journal-editor-date {
+        font-size: 0.9rem;
+        color: #777;
+    }
+    
+    .journal-editor-actions button {
+        margin-left: 10px;
+    }
+    
+    .journal-editor-content {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .journal-editor-content textarea {
+        flex: 1;
+        border: none;
+        resize: none;
+        font-family: inherit;
+        font-size: 1rem;
+        line-height: 1.6;
+        padding: 0;
+        min-height: 300px;
+    }
+    
+    .journal-editor-content textarea:focus {
+        outline: none;
+    }
+    
+    .journal-prompts {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+    }
+    
+    .journal-prompts h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 1rem;
+        color: #555;
+    }
+    
+    .journal-prompts ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    
+    .journal-prompts li {
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: #666;
+        cursor: pointer;
+    }
+    
+    .journal-prompts li:hover {
+        color: #6A8CAF;
+    }
+    
+    .new-entry-button {
+        margin-bottom: 20px;
+    }
+    
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .empty-state p {
+        margin-bottom: 20px;
+        color: #777;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="journal-page">
+    <h1>Journal</h1>
+    <p class="page-description">Express your thoughts and feelings in a private journal. Writing can be therapeutic and help you process emotions.</p>
+    
+    <div class="new-entry-button">
+        <button id="new-entry-btn" class="btn primary">New Journal Entry</button>
+    </div>
+    
+    <div class="journal-container">
+        <div class="journal-entries">
+            <div class="journal-entries-header">
+                <h2>Your Entries</h2>
+            </div>
+            <div class="journal-entries-list" id="entries-list">
+                {% if entries %}
+                    {% for entry in entries %}
+                        <div class="journal-entry-item" data-id="{{ entry.id }}">
+                            <div class="journal-entry-date">{{ entry.date.strftime('%B %d, %Y') }}</div>
+                            <div class="journal-entry-preview">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <p>You haven't written any journal entries yet.</p>
+                        <p>Click "New Journal Entry" to get started.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="journal-editor">
+            <div class="journal-editor-header">
+                <div class="journal-editor-date" id="editor-date">{{ now.strftime('%B %d, %Y') }}</div>
+                <div class="journal-editor-actions">
+                    <button id="save-entry-btn" class="btn primary">Save Entry</button>
+                </div>
+            </div>
+            <div class="journal-editor-content">
+                <textarea id="entry-content" placeholder="Write your thoughts here..."></textarea>
+                
+                <div class="journal-prompts">
+                    <h3>Journal Prompts</h3>
+                    <ul>
+                        <li>What made you smile today?</li>
+                        <li>What's something you're grateful for right now?</li>
+                        <li>What's something challenging you're facing, and how are you handling it?</li>
+                        <li>What's one small thing you can do today to take care of yourself?</li>
+                        <li>What emotions have you experienced today, and what triggered them?</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const entriesList = document.getElementById('entries-list');
+        const entryItems = document.querySelectorAll('.journal-entry-item');
+        const editorDate = document.getElementById('editor-date');
+        const entryContent = document.getElementById('entry-content');
+        const saveEntryBtn = document.getElementById('save-entry-btn');
+        const newEntryBtn = document.getElementById('new-entry-btn');
+        const journalPrompts = document.querySelectorAll('.journal-prompts li');
+        
+        let currentEntryId = null;
+        let isNewEntry = true;
+        
+        // Set up journal prompt click handlers
+        journalPrompts.forEach(prompt => {
+            prompt.addEventListener('click', function() {
+                entryContent.value += prompt.textContent + '\n\n';
+                entryContent.focus();
+            });
+        });
+        
+        // Load entry content when clicked
+        function loadEntry(id) {
+            // In a real app, you'd fetch the entry from the server
+            // For now, we'll just use the preview text
+            const entryItem = document.querySelector(`.journal-entry-item[data-id="${id}"]`);
+            if (entryItem) {
+                // Remove active class from all entries
+                entryItems.forEach(item => item.classList.remove('active'));
+                
+                // Add active class to selected entry
+                entryItem.classList.add('active');
+                
+                // Update editor date
+                const entryDate = entryItem.querySelector('.journal-entry-date').textContent;
+                editorDate.textContent = entryDate;
+                
+                // Fetch full entry content from server (simplified for demo)
+                fetch(`/api/journal/${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        entryContent.value = data.content;
+                        currentEntryId = id;
+                        isNewEntry = false;
+                    })
+                    .catch(error => {
+                        console.error('Error loading entry:', error);
+                        //alert('There was an error loading the journal entry. Please try again.');
+                    });
+            }
+        }
+        
+        // Set up entry item click handlers
+        entryItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const entryId = this.dataset.id;
+                loadEntry(entryId);
+            });
+        });
+        
+        // New entry button handler
+        newEntryBtn.addEventListener('click', function() {
+            // Clear editor
+            entryContent.value = '';
+            
+            // Update date to today
+            const today = new Date();
+            editorDate.textContent = today.toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+            
+            // Remove active class from all entries
+            entryItems.forEach(item => item.classList.remove('active'));
+            
+            // Reset entry state
+            currentEntryId = null;
+            isNewEntry = true;
+            
+            // Focus on editor
+            entryContent.focus();
+        });
+        
+        // Save entry button handler
+        saveEntryBtn.addEventListener('click', async function() {
+            const content = entryContent.value.trim();
+            
+            if (!content) {
+                alert('Please write something before saving.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/journal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: currentEntryId,
+                        content: content,
+                        isNew: isNewEntry
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Reload page to show new entry
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error saving entry:', error);
+                alert('There was an error saving your journal entry. Please try again.');
+            }
+        });
+        
+        // Load first entry by default if available
+        if (entryItems.length > 0) {
+            entryItems[0].click();
+        } else {
+            // If no entries, set up for new entry
+            newEntryBtn.click();
+        }
+    });
+</script>
+{% endblock %}
+

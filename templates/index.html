@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Welcome to MindfulMe</h1>
+        <h2>Your companion for mental well-being</h2>
+        <p>Track your mood, chat with our supportive AI, journal your thoughts, and discover personalized resources to help you on your mental health journey.</p>
+        <div class="cta-buttons">
+            <a href="{{ url_for('register') }}" class="btn primary">Get Started</a>
+            <a href="{{ url_for('login') }}" class="btn secondary">Login</a>
+        </div>
+    </div>
+    <div class="hero-image">
+        <img src="{{ url_for('static', filename='images/hero-illustration.png') }}" alt="Mental health illustration">
+    </div>
+</section>
+
+<section class="features">
+    <h2>How MindfulMe Helps You</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <img src="{{ url_for('static', filename='images/chatbot.png') }}" alt="Chatbot icon">
+            </div>
+            <h3>AI Support Companion Serena</h3>
+            <p>Chat with our empathetic AI assistant Serena anytime you need someone to talk to. Get supportive responses and coping strategies.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <img src="{{ url_for('static', filename='images/mood.png') }}" alt="Mood tracking icon">
+            </div>
+            <h3>Mood Tracking</h3>
+            <p>Log your daily mood and see patterns over time with visual charts. Understanding your emotional trends is the first step to improvement.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <img src="{{ url_for('static', filename='images/journaling.png') }}" alt="Journal icon">
+            </div>
+            <h3>Journaling</h3>
+            <p>Express your thoughts and feelings in a private journal. Writing can be therapeutic and help you process emotions.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <img src="{{ url_for('static', filename='images/resource.png') }}" alt="Resources icon">
+            </div>
+            <h3>Personalized Resources</h3>
+            <p>Discover articles, videos, and exercises tailored to your current emotional state and needs.</p>
+        </div>
+    </div>
+</section>
+
+<section class="testimonials">
+    <h2>What Our Users Say</h2>
+    <div class="testimonial-slider">
+        <div class="testimonial">
+            <p>"MindfulMe has helped me understand my emotional patterns and develop healthier coping strategies. The AI chatbot is surprisingly insightful."</p>
+            <div class="testimonial-author">- Jamie S.</div>
+        </div>
+        <div class="testimonial">
+            <p>"I love the mood tracker feature. Being able to visualize my emotional ups and downs has been eye-opening and helped me identify triggers."</p>
+            <div class="testimonial-author">- Alex T.</div>
+        </div>
+        <div class="testimonial">
+            <p>"The personalized resources have introduced me to meditation techniques that actually work for my anxiety. This platform is thoughtfully designed."</p>
+            <div class="testimonial-author">- Morgan P.</div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Simple testimonial slider
+    document.addEventListener('DOMContentLoaded', function() {
+        const testimonials = document.querySelectorAll('.testimonial');
+        let currentTestimonial = 0;
+        
+        function showTestimonial(index) {
+            testimonials.forEach((testimonial, i) => {
+                testimonial.style.opacity = i === index ? '1' : '0';
+                testimonial.style.transform = i === index ? 'translateX(0)' : 'translateX(50px)';
+            });
+        }
+        
+        function nextTestimonial() {
+            currentTestimonial = (currentTestimonial + 1) % testimonials.length;
+            showTestimonial(currentTestimonial);
+        }
+        
+        // Initialize
+        showTestimonial(0);
+        
+        // Auto-rotate testimonials
+        setInterval(nextTestimonial, 5000);
+    });
+</script>
+{% endblock %}
+
