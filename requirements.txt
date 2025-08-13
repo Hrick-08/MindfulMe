@@ -8,3 +8,4 @@ Flask-SocketIO
 uuid
 dotenv
 smtplib
+django
